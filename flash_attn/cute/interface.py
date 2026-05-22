@@ -719,6 +719,7 @@ def _flash_attn_fwd(
         disable_sparse_kv_bitmask,
         fa_logging.get_fa_log_level(),
     )
+    print("forward: compile_key =", compile_key, ", in_cache =", compile_key in _flash_attn_fwd.compile_cache)
 
     if compile_key not in _flash_attn_fwd.compile_cache:
         (
@@ -1678,6 +1679,7 @@ def _flash_attn_bwd(
             (seqlen_q_rounded // m_block_size == 1),
             (seqlen_k_rounded // n_block_size == 1),
         )
+    print("backward: compile_key =", compile_key, ", in_cache =", compile_key in _flash_attn_bwd.compile_cache)
 
     if compile_key not in _flash_attn_bwd.compile_cache:
         q_tensor, k_tensor, v_tensor, do_tensor, dq_tensor, dk_tensor, dv_tensor = [
