@@ -115,6 +115,20 @@ class FwdConfig:
     intra_wg_overlap: bool
 
 
+def print_cache_debug(prompt: str, cache: dict, compile_key):
+    cached_keys = list(cache.keys())
+    cached_key_hashs = [hash(k) for k in cached_keys]
+    print(
+        prompt, ": compile_key =", compile_key,
+        ", key_hash =", hash(compile_key),
+        "\n cached_keys =", cached_keys,
+        ", compile_key in cached_keys =", compile_key in cached_keys,
+        "\n cached_key_hashs=", cached_key_hashs,
+        ", hash(compile_key) in cached_key_hashs=", hash(compile_key) in cached_key_hashs,
+        "\n matched_keys =", [(cached_key, cached_key_hash, compile_key, hash(compile_key)) for cached_key, cached_key_hash in zip(cached_keys, cached_key_hashs) if cached_key == compile_key],
+    )
+
+
 def _tile_size_fwd_sm90(head_dim, head_dim_v, is_causal, is_local, sparse_block_size_q=None):
     """Return FwdConfig for SM90 forward.
 
@@ -719,9 +733,9 @@ def _flash_attn_fwd(
         disable_sparse_kv_bitmask,
         fa_logging.get_fa_log_level(),
     )
-    print("forward: compile_key =", compile_key, ", in_cache =", compile_key in _flash_attn_fwd.compile_cache)
 
     if compile_key not in _flash_attn_fwd.compile_cache:
+        print_cache_debug("forward", _flash_attn_fwd.compile_cache.cache, compile_key)
         (
             cu_seqlens_q_tensor,
             cu_seqlens_k_tensor,
@@ -1679,9 +1693,9 @@ def _flash_attn_bwd(
             (seqlen_q_rounded // m_block_size == 1),
             (seqlen_k_rounded // n_block_size == 1),
         )
-    print("backward: compile_key =", compile_key, ", in_cache =", compile_key in _flash_attn_bwd.compile_cache)
 
     if compile_key not in _flash_attn_bwd.compile_cache:
+        print_cache_debug("backward", _flash_attn_bwd.compile_cache.cache, compile_key)
         q_tensor, k_tensor, v_tensor, do_tensor, dq_tensor, dk_tensor, dv_tensor = [
             to_cute_tensor(t) for t in (q, k, v, dout, dq, dk, dv)
         ]
